@@ -131,8 +131,13 @@
                 ></v-date-picker>
               </v-menu>
 
-              <v-btn color="success" class="mr-4" @click="addEvent()">
-                Add Event
+              <v-btn
+                color="success"
+                class="mr-4"
+                @click="addEvent()"
+                :disabled="processing"
+              >
+                {{ processing ? "Adding..." : "Add Event" }}
               </v-btn>
             </v-form>
           </v-col>
@@ -150,7 +155,7 @@
                 <v-col cols="12">
                   <v-list>
                     <template v-for="(task, index) in eventInView.tasks">
-                      <v-list-item :key="task.id">
+                      <v-list-item :key="task.title">
                         <v-list-item-content>
                           <v-list-item-title
                             v-text="task.title"
@@ -186,8 +191,12 @@
             <v-btn color="blue darken-1" text @click="dialog = false"
               >Close</v-btn
             >
-            <v-btn color="blue darken-1" text @click="dialog = false"
-              >Save</v-btn
+            <v-btn
+              color="blue darken-1"
+              text
+              @click="saveEvent()"
+              :disabled="updating"
+              >{{ updating ? "Saving..." : "Save Event" }}</v-btn
             >
           </v-card-actions>
         </v-card>
@@ -222,6 +231,7 @@ export default {
       eventInView: {},
       newTask: null,
       processing: false,
+      updating: false,
       user: this.$auth.user
     };
   },
@@ -282,6 +292,8 @@ export default {
         taskId = 1;
       }
 
+      console.log(taskId);
+
       let newTask = {
         id: taskId,
         title: this.newTask,
@@ -289,6 +301,19 @@ export default {
       };
       this.eventInView.tasks.push(newTask);
       this.newTask = null;
+    },
+    async saveEvent() {
+      this.updating = true;
+      //Update tasks in firestore
+      await db
+        .collection(events_db)
+        .doc(this.eventInView.id)
+        .update({
+          tasks: this.eventInView.tasks
+        });
+
+      this.updating = false;
+      this.dialog = false;
     }
   }
 };
